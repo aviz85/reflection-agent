@@ -185,12 +185,44 @@ Format: '+line to add to Learned Patterns' or '-line to remove'. Include date [Y
 Only add lines that represent genuinely new, reusable insights.
 SYNTHFOOTER
 
-SYNTH_RESULT=$(claude -p "$(cat "$TMP/synth-prompt.txt")" --model claude-sonnet-4-6 --max-turns 5 2>/dev/null || echo "Synthesis failed")
+# Run findings and briefing separately to avoid oversized prompt
 
-# Split into sections
-echo "$SYNTH_RESULT" | awk '/^---SECTION---$/{n++; next} n==0' > "$DIR/findings/$DATE.md"
-echo "$SYNTH_RESULT" | awk '/^---SECTION---$/{n++; next} n==1' > "$DIR/briefings/$DATE.md"
-PATCH=$(echo "$SYNTH_RESULT" | awk '/^---SECTION---$/{n++; next} n==2')
+# Findings
+cat > "$TMP/findings-prompt.txt" <<'FHEAD'
+Synthesize these patterns and questions into a concise daily findings doc. Max 40 lines markdown.
+Include: key patterns found, questions generated, skill proposals if any.
+FHEAD
+head -60 "$TMP/patterns.md" >> "$TMP/findings-prompt.txt"
+echo -e "\n## Questions:" >> "$TMP/findings-prompt.txt"
+head -20 "$DIR/questions/$DATE.md" >> "$TMP/findings-prompt.txt" 2>/dev/null
+
+claude -p "$(cat "$TMP/findings-prompt.txt")" --model claude-sonnet-4-6 --max-turns 5 > "$DIR/findings/$DATE.md" 2>/dev/null || cp "$TMP/patterns.md" "$DIR/findings/$DATE.md"
+
+# Briefing: build from findings directly (no extra LLM call to avoid max-turns)
+BEST_Q=$(grep '^1\.' "$DIR/questions/$DATE.md" 2>/dev/null | head -1 | sed 's/^1\. //')
+TOP_FINDINGS=$(grep '^\- ' "$DIR/findings/$DATE.md" 2>/dev/null | head -5)
+PROPOSAL=$(head -1 "$DIR/skills-proposed/$DATE-proposal.md" 2>/dev/null | grep -o 'name: [^ ]*' || echo "")
+
+cat > "$DIR/briefings/$DATE.md" <<BRIEFING
+בוקר טוב, הנה מה שמצאתי הלילה:
+
+$TOP_FINDINGS
+
+שאלה של היום:
+$BEST_Q
+
+${PROPOSAL:+סקיל מוצע: $PROPOSAL}
+
+דוח מלא: ~/reflection-agent/findings/$DATE.md
+BRIEFING
+
+# CLAUDE.md self-update prompt
+PATCH_PROMPT="Based on today's analysis, suggest 0-3 lines to add to the Learned Patterns section of a CLAUDE.md file. Format: '+line [YYYY-MM-DD]'. If nothing genuinely new, write 'NO CHANGES'. Max 3 lines total.
+
+Today's findings summary:
+$(head -10 "$TMP/patterns.md")"
+
+PATCH=$(claude -p "$PATCH_PROMPT" --model claude-sonnet-4-6 --max-turns 5 2>/dev/null || echo "NO CHANGES")
 
 echo "[Phase 5] Done"
 

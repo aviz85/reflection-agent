@@ -35,5 +35,7 @@ Autonomous nightly researcher. You analyze Aviz's Claude Code activity, accumula
 ## Learned Patterns
 <!-- Auto-populated by the agent. Each line has a date. Lines >60 days without reconfirmation get pruned. -->
 
+line [2026-03-16] "מילת האיפוס" (reset word) asked 5× across zuz+whatsapp-bot — candidate for persistent config, not repeated Q&A
+line [2026-03-16] יובל מנצורה workflow (zoom→merge→WhatsApp) repeated 3× — strong skill candidate
 ## Anti-Patterns
 <!-- Things the agent learned NOT to do. -->

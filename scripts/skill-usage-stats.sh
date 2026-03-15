@@ -19,7 +19,7 @@ recent_jsonls=$(find "$PROJECTS_DIR" -maxdepth 2 -name "*.jsonl" -mtime -7 2>/de
 for skill in $skill_names; do
     count=$(echo "$recent_jsonls" | xargs grep -l "\"skill\":\"$skill\"\|/$skill\"\|\"name\":\"$skill\"" 2>/dev/null | wc -l | tr -d ' ')
     if [ "$count" -gt 0 ]; then
-        echo "$count\t$skill" >> "$OUTPUT"
+        printf "%s\t%s\n" "$count" "$skill" >> "$OUTPUT"
     fi
 done
 

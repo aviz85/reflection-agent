@@ -46,10 +46,10 @@ Your philosophy: Aviz operates on "direct light" (אור ישר) — pure creati
 
 ## Today's User Prompts (last 24h):
 HEADER
-cat "$TMP/today-prompts.txt" >> "$TMP/pattern-prompt.txt" 2>/dev/null || echo "(no activity)" >> "$TMP/pattern-prompt.txt"
+head -100 "$TMP/today-prompts.txt" >> "$TMP/pattern-prompt.txt" 2>/dev/null || echo "(no activity)" >> "$TMP/pattern-prompt.txt"
 
-echo -e "\n## Project Activity Summary (top 30):" >> "$TMP/pattern-prompt.txt"
-head -30 "$TMP/project-activity.tsv" >> "$TMP/pattern-prompt.txt" 2>/dev/null
+echo -e "\n## Project Activity Summary (top 20):" >> "$TMP/pattern-prompt.txt"
+head -20 "$TMP/project-activity.tsv" >> "$TMP/pattern-prompt.txt" 2>/dev/null
 
 echo -e "\n## Skill Usage (last 7 days):" >> "$TMP/pattern-prompt.txt"
 cat "$TMP/skill-usage.txt" >> "$TMP/pattern-prompt.txt" 2>/dev/null
@@ -69,7 +69,7 @@ Analyze and output ONLY a structured markdown with:
 Be concise. Max 50 lines.
 FOOTER
 
-claude -p "$(cat "$TMP/pattern-prompt.txt")" --model claude-sonnet-4-6 --max-turns 3 > "$TMP/patterns.md" 2>/dev/null || echo "Phase 2 failed" > "$TMP/patterns.md"
+claude -p "$(cat "$TMP/pattern-prompt.txt")" --model claude-sonnet-4-6 --max-turns 5 > "$TMP/patterns.md" 2>/dev/null || echo "Phase 2 failed" > "$TMP/patterns.md"
 
 echo "[Phase 2] Done"
 
@@ -111,7 +111,7 @@ Output format:
 Then output a section '## For open.md' with the 2 best questions as bullet points (- prefix).
 QFOOTER
 
-claude -p "$(cat "$TMP/question-prompt.txt")" --model claude-sonnet-4-6 --max-turns 3 > "$DIR/questions/$DATE.md" 2>/dev/null || echo "# Questions — $DATE\n\n(generation failed)" > "$DIR/questions/$DATE.md"
+claude -p "$(cat "$TMP/question-prompt.txt")" --model claude-sonnet-4-6 --max-turns 5 > "$DIR/questions/$DATE.md" 2>/dev/null || echo "# Questions — $DATE\n\n(generation failed)" > "$DIR/questions/$DATE.md"
 
 # Append best questions to open.md
 grep '^- ' "$DIR/questions/$DATE.md" 2>/dev/null | head -2 >> "$DIR/questions/open.md" || true
@@ -141,7 +141,7 @@ user_invocable: true
 Only output the SKILL.md content. Be practical and concise.
 SFOOTER
 
-    claude -p "$(cat "$TMP/skill-prompt.txt")" --model claude-sonnet-4-6 --max-turns 3 > "$DIR/skills-proposed/$DATE-proposal.md" 2>/dev/null || true
+    claude -p "$(cat "$TMP/skill-prompt.txt")" --model claude-sonnet-4-6 --max-turns 5 > "$DIR/skills-proposed/$DATE-proposal.md" 2>/dev/null || true
     echo "[Phase 4] Skill proposed"
 else
     echo "[Phase 4] No repetition detected, skipping"
@@ -185,7 +185,7 @@ Format: '+line to add to Learned Patterns' or '-line to remove'. Include date [Y
 Only add lines that represent genuinely new, reusable insights.
 SYNTHFOOTER
 
-SYNTH_RESULT=$(claude -p "$(cat "$TMP/synth-prompt.txt")" --model claude-sonnet-4-6 --max-turns 3 2>/dev/null || echo "Synthesis failed")
+SYNTH_RESULT=$(claude -p "$(cat "$TMP/synth-prompt.txt")" --model claude-sonnet-4-6 --max-turns 5 2>/dev/null || echo "Synthesis failed")
 
 # Split into sections
 echo "$SYNTH_RESULT" | awk '/^---SECTION---$/{n++; next} n==0' > "$DIR/findings/$DATE.md"
